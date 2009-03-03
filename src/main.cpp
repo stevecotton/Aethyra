@@ -716,6 +716,7 @@ int main(int argc, char *argv[])
 
     // Initialize PhysicsFS
     PHYSFS_init(argv[0]);
+    PHYSFS_permitSymbolicLinks(1);
 
     init_engine(options);
 
