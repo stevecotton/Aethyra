@@ -377,7 +377,7 @@ static void init_engine(const Options &options)
 #endif
 
 #ifdef USE_OPENGL
-    bool useOpenGL = (bool) config.getValue("opengl", 0) == 1;
+    bool useOpenGL = !options.noOpenGL && (config.getValue("opengl", 0) == 1);
 
     // Setup image loading for the right image format
     Image::setLoadAsOpenGL(useOpenGL);
@@ -476,6 +476,7 @@ static void printHelp()
         << _("  -P --password   : Login with this password") << std::endl
         << _("  -u --skipupdate : Skip the update downloads") << std::endl
         << _("  -U --username   : Login with this username") << std::endl
+        << _("  -O --noopengl   : Disable OpenGL for this sesion") << std::endl
         << _("  -v --version    : Display the version") << std::endl;
 }
 
@@ -490,7 +491,7 @@ static void printVersion()
 
 static void parseOptions(int argc, char *argv[], Options &options)
 {
-    const char *optstring = "hvud:U:P:Dp:C:H:";
+    const char *optstring = "hvud:U:P:Dp:C:H:O";
 
     const struct option long_options[] = {
         { "configfile", required_argument, 0, 'C' },
@@ -502,6 +503,7 @@ static void parseOptions(int argc, char *argv[], Options &options)
         { "updatehost", required_argument, 0, 'H' },
         { "skipupdate", no_argument,       0, 'u' },
         { "username",   required_argument, 0, 'U' },
+        { "noopengl",   no_argument,       0, 'O' },
         { "version",    no_argument,       0, 'v' },
         { 0 }
     };
@@ -546,6 +548,9 @@ static void parseOptions(int argc, char *argv[], Options &options)
                 break;
             case 'v':
                 options.printVersion = true;
+                break;
+            case 'O':
+                options.noOpenGL = true;
                 break;
         }
     }
