@@ -51,7 +51,7 @@ StatusWindow::StatusWindow(LocalPlayer *player):
     mGpLabel = new Label(strprintf(_("Money: %d GP"), 0));
 
     mHpLabel = new Label(_("HP:"));
-    mHpBar = new ProgressBar(0.0f, 80, 15, gcn::Color(223, 32, 32));
+    mHpBar = new ProgressBar(0.5f, 80, 15, gcn::Color(223, 32, 32));
     mHpBar->addColor(230, 171, 34);
     mHpBar->addColor(0, 171, 34);
 
@@ -65,6 +65,12 @@ StatusWindow::StatusWindow(LocalPlayer *player):
 
     mJobLabel = new Label(_("Job:"));
     mJobBar = new ProgressBar(0.0f, 80, 15, gcn::Color(220, 135, 203));
+
+    mHpBar->setProgress((float) mPlayer->mHp / mPlayer->mMaxHp);
+    mMpBar->setProgress((float) mPlayer->mMp / mPlayer->mMaxMp);
+
+    mXpBar->setProgress((float) mPlayer->getXp() / mPlayer->mXpForNextLevel);
+    mJobBar->setProgress((float) mPlayer->mJobXp / mPlayer->mJobXpForNextLevel);
 
     // ----------------------
     // Stats Part
@@ -284,8 +290,8 @@ void StatusWindow::widgetShown(const gcn::Event& event)
 {
     Window::widgetShown(event);
 
-    mHpBar->reset();
-    mMpBar->reset();
-    mXpBar->reset();
-    mJobBar->reset();
+    mHpBar->reset((float) mPlayer->mHp / mPlayer->mMaxHp);
+    mMpBar->reset((float) mPlayer->mMp / mPlayer->mMaxMp);
+    mXpBar->reset((float) mPlayer->getXp() / mPlayer->mXpForNextLevel);
+    mJobBar->reset((float) mPlayer->mJobXp / mPlayer->mJobXpForNextLevel);
 }

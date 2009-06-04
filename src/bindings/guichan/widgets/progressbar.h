@@ -115,10 +115,10 @@ class ProgressBar : public gcn::Widget
         { mSmoothColorChange = smoothColorChange; }
 
         /**
-         * Sets the current shown progress to 0, and resets the progress colors
-         * as well.
+         * Sets the current shown progress to the argument (ignoring smooth
+         * scrolling), and resets the progress colors as well.
          */
-        void reset();
+        void reset(float progress = 0.0f);
 
     private:
         float mProgress, mProgressToGo;

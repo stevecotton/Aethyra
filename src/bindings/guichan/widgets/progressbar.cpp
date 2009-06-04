@@ -81,6 +81,7 @@ ProgressBar::ProgressBar(float progress, int width, int height,
     mColors.push_back(color);
 
     setProgress(progress);
+    mProgress = mProgressToGo;
     setSize(width, height);
 
     if (mInstances == 0)
@@ -240,9 +241,8 @@ void ProgressBar::addColor(Uint8 red, Uint8 green, Uint8 blue)
     mColors.push_back(gcn::Color(red, green, blue));
 }
 
-void ProgressBar::reset()
+void ProgressBar::reset(float progress)
 {
-    mProgress = 0;
+    mProgress = mProgressToGo = progress;
     mColor = mColorToGo = mColors[0];
 }
-
