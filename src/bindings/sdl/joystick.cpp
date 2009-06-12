@@ -27,6 +27,9 @@
 #include "../../core/configuration.h"
 #include "../../core/log.h"
 
+#define AXIS_X 0
+#define AXIS_Y 1
+
 int Joystick::joystickCount = 0;
 
 void Joystick::init()
@@ -90,14 +93,14 @@ void Joystick::update()
         return;
 
     // X-Axis
-    int position = SDL_JoystickGetAxis(mJoystick, 0);
+    int position = SDL_JoystickGetAxis(mJoystick, AXIS_X);
     if (position >= mRightTolerance)
         mDirection |= RIGHT;
     else if (position <= mLeftTolerance)
         mDirection |= LEFT;
 
     // Y-Axis
-    position = SDL_JoystickGetAxis(mJoystick, 1);
+    position = SDL_JoystickGetAxis(mJoystick, AXIS_Y);
     if (position <= mUpTolerance)
         mDirection |= UP;
     else if (position >= mDownTolerance)
@@ -120,14 +123,14 @@ void Joystick::startCalibration()
 void Joystick::doCalibration()
 {
     // X-Axis
-    int position = SDL_JoystickGetAxis(mJoystick, 0);
+    int position = SDL_JoystickGetAxis(mJoystick, AXIS_X);
     if (position > mRightTolerance)
         mRightTolerance = position;
     else if (position < mLeftTolerance)
         mLeftTolerance = position;
 
     // Y-Axis
-    position = SDL_JoystickGetAxis(mJoystick, 1);
+    position = SDL_JoystickGetAxis(mJoystick, AXIS_Y);
     if (position > mDownTolerance)
         mDownTolerance = position;
     else if (position < mUpTolerance)
