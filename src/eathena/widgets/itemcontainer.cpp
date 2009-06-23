@@ -175,6 +175,9 @@ void ItemContainer::logic()
     }
 }
 
+const static std::string STRING_ONE = "1";
+const static std::string STRING_EQUIPPED = "Eq.";
+
 void ItemContainer::draw(gcn::Graphics *graphics)
 {
     if (!isVisible())
@@ -211,8 +214,12 @@ void ItemContainer::draw(gcn::Graphics *graphics)
         graphics->setFont(getFont());
         graphics->setColor(guiPalette->getColor(item->isEquipped() ? 
                                Palette::ITEM_EQUIPPED : Palette::TEXT));
+        const std::string& text =
+                item->isEquipped() ? STRING_EQUIPPED :
+                item->getQuantity() == 1 ? STRING_ONE :
+                toString(item->getQuantity());
         graphics->drawText(
-                (item->isEquipped() ? "Eq." : toString(item->getQuantity())),
+                text,
                 itemX + gridWidth / 2, itemY + gridHeight - 11,
                 gcn::Graphics::CENTER);
 
