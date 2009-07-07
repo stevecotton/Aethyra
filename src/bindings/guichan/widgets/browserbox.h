@@ -99,6 +99,12 @@ class BrowserBox : public gcn::Widget, public gcn::MouseListener
          * Draws the browser box.
          */
         void draw(gcn::Graphics *graphics);
+        void drawPrewrapped(gcn::Graphics *graphics);
+
+        /**
+         * Invalidates the cache of line-wrapped text.
+         */
+        void setWidth(int width);
 
         /**
          * BrowserBox modes.
@@ -143,6 +149,18 @@ class BrowserBox : public gcn::Widget, public gcn::MouseListener
         typedef std::list<std::string> TextRows;
         typedef TextRows::iterator TextRowIterator;
         TextRows mTextRows;
+
+        class PrewrappedRow {
+            public:
+                bool wrapped;
+                std::string row;
+
+                PrewrappedRow(bool w, std::string r) : wrapped(w), row(r) {}
+        };
+        typedef std::list<PrewrappedRow> TextRowsPrewrapped;
+        typedef TextRowsPrewrapped::iterator TextRowPrewrappedIterator;
+        TextRowsPrewrapped mTextRowsPrewrapped;
+        bool mTextRowsPrewrappedValid;
 
         typedef std::vector<BROWSER_LINK> Links;
         typedef Links::iterator LinkIterator;

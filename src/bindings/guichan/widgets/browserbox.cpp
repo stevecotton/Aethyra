@@ -67,6 +67,14 @@ void BrowserBox::disableLinksAndUserColors()
     mUseLinksAndUserColors = false;
 }
 
+void BrowserBox::setWidth(int width)
+{
+    gcn::Widget::setWidth(width);
+
+    // Clear the cached prewrapped lines
+    mTextRowsPrewrapped.clear();
+}
+
 void BrowserBox::addRow(const std::string &row)
 {
     std::string tmp = row;
@@ -74,6 +82,9 @@ void BrowserBox::addRow(const std::string &row)
     BROWSER_LINK bLink;
     std::string::size_type idx1, idx2, idx3;
     gcn::Font *font = getFont();
+
+    // Clear the cached prewrapped lines
+    mTextRowsPrewrapped.clear();
 
     // Use links and user defined colors
     if (mUseLinksAndUserColors)
@@ -214,6 +225,7 @@ void BrowserBox::addRow(const std::string &row)
 void BrowserBox::clearRows()
 {
     mTextRows.clear();
+    mTextRowsPrewrapped.clear();
     mLinks.clear();
     setWidth(0);
     setHeight(0);
@@ -264,6 +276,13 @@ void BrowserBox::draw(gcn::Graphics *graphics)
        return;
 
     // End of Forge's addition
+
+    if (!mTextRowsPrewrapped.empty())
+    {
+        drawPrewrapped(graphics);
+        return;
+    }
+
     if (mOpaque)
     {
         graphics->setColor(guiPalette->getColor(Palette::BACKGROUND));
@@ -305,6 +324,211 @@ void BrowserBox::draw(gcn::Graphics *graphics)
         gcn::Color prevColor = selColor;
         const std::string row = *(i);
         bool wrapped = false;
+        x = 0;
+
+        // Check for separator lines
+        if (row.find("---", 0) == 0)
+        {
+            const int dashWidth = font->getWidth("-");
+            for (x = 0; x < getWidth(); x++)
+            {
+                font->drawString(graphics, "-", x, y);
+                x += dashWidth - 2;
+            }
+            y += font->getHeight();
+            PrewrappedRow temp(wrapped, row);
+            mTextRowsPrewrapped.push_back(temp);
+            continue;
+        }
+
+        // TODO: Check if we must take texture size limits into account here
+        // TODO: Check if some of the O(n) calls can be removed
+        for (std::string::size_type start = 0, end = std::string::npos;
+                start != std::string::npos;
+                start = end, end = std::string::npos)
+        {
+            bool previousWrapped = wrapped;
+
+            // Wrapped line continuation shall be indented
+            if (wrapped)
+            {
+                y += font->getHeight();
+                x = 15;
+            }
+
+            // "Tokenize" the string at control sequences
+            if (mUseLinksAndUserColors)
+                end = row.find("##", start + 1);
+
+            if (mUseLinksAndUserColors ||
+                    (!mUseLinksAndUserColors && (start == 0)))
+            {
+                // Check for color change in format "##x", x = [L,P,0..9]
+                if (row.find("##", start) == start && row.size() > start + 2)
+                {
+                    const char c = row.at(start + 2);
+                    bool valid;
+                    const gcn::Color col = guiPalette->getColor(c, valid);
+
+                    if (c == '>')
+                        selColor = prevColor;
+                    else if (c == '<')
+                    {
+                        const int size = mLinks[link].x2 - mLinks[link].x1;
+                        mLinks[link].x1 = x;
+                        mLinks[link].y1 = y;
+                        mLinks[link].x2 = mLinks[link].x1 + size;
+                        mLinks[link].y2 = y + font->getHeight() - 1;
+                        link++;
+                        prevColor = selColor;
+                        selColor = col;
+                    }
+                    else if (valid)
+                        selColor = col;
+                    else
+                    {
+                        switch (c)
+                        {
+                            case '1': selColor = RED; break;
+                            case '2': selColor = GREEN; break;
+                            case '3': selColor = BLUE; break;
+                            case '4': selColor = ORANGE; break;
+                            case '5': selColor = YELLOW; break;
+                            case '6': selColor = PINK; break;
+                            case '7': selColor = PURPLE; break;
+                            case '8': selColor = GRAY; break;
+                            case '9': selColor = BROWN; break;
+                            case '0':
+                            default:
+                                selColor = textColor;
+                        }
+                    }
+                    start += 3;
+
+                    if (start == row.size())
+                        break;
+                }
+                graphics->setColor(selColor);
+            }
+
+            std::string::size_type len =
+                end == std::string::npos ? end : end - start;
+            std::string part = row.substr(start, len);
+
+            // Auto wrap mode
+            if (mMode == AUTO_WRAP && (x + font->getWidth(part) + 10) >
+                getWidth())
+            {
+                bool forced = false;
+                char const *hyphen = "~";
+                int hyphenWidth = font->getWidth(hyphen);
+
+                /* FIXME: This code layout makes it easy to crash remote
+                   clients by talking garbage. Forged long utf-8 characters
+                   will cause either a buffer underflow in substr or an
+                   infinite loop in the main loop. */
+                do
+                {
+                    if (!forced)
+                        end = row.rfind(' ', end);
+
+                    // Check if we have to (stupidly) force-wrap
+                    if (end == std::string::npos || end <= start)
+                    {
+                        forced = true;
+                        end = row.size();
+                        x += hyphenWidth; // Account for the wrap-notifier
+                        continue;
+                    }
+
+                    // Skip to the start of the current character
+                    while ((row[end] & 192) == 128)
+                        end--;
+
+                    end--; // And then to the last byte of the previous one
+
+                    part = row.substr(start, end - start + 1);
+                } while (end > start && (x + font->getWidth(part) + 10) > getWidth());
+
+                if (forced)
+                {
+                    x -= hyphenWidth; // Remove the wrap-notifier accounting
+                    font->drawString(graphics, hyphen,
+                            getWidth() - hyphenWidth, y);
+                    end++; // Skip to the next character
+                }
+                else
+                    end += 2; // Skip to after the space
+
+                wrapped = true;
+                wrappedLines++;
+            }
+            font->drawString(graphics, part, x, y);
+            x += font->getWidth(part);
+            PrewrappedRow temp(previousWrapped, row);
+            mTextRowsPrewrapped.push_back(temp);
+        }
+        y += font->getHeight();
+        setHeight((mTextRows.size() + wrappedLines) * font->getHeight());
+    }
+}
+
+void BrowserBox::drawPrewrapped(gcn::Graphics *graphics)
+{
+    /* Forge's addition: The remaining code get nuts
+     *   on infinite loop when getWidth is 0 (how and why
+     * it might be so is yet to be explained). For the
+     * time being, just protect with a basic sanity check.
+     *
+     * The infinite loop (well, sort of) is the increasing of x
+     * while trying to fit part into the current width
+     * (while (x + part..+10 > getWidth() ), which cannot be false)
+     */
+    if (!isVisible() ||!getWidth()||!getHeight())
+       return;
+
+    // End of Forge's addition
+    if (mOpaque)
+    {
+        graphics->setColor(guiPalette->getColor(Palette::BACKGROUND));
+        graphics->fillRectangle(gcn::Rectangle(0, 0, getWidth(), getHeight()));
+    }
+
+    if (mSelectedLink >= 0)
+    {
+        if ((mHighMode & BACKGROUND))
+        {
+            graphics->setColor(guiPalette->getColor(Palette::HIGHLIGHT));
+            graphics->fillRectangle(gcn::Rectangle(
+                        mLinks[mSelectedLink].x1,
+                        mLinks[mSelectedLink].y1,
+                        mLinks[mSelectedLink].x2 - mLinks[mSelectedLink].x1,
+                        mLinks[mSelectedLink].y2 - mLinks[mSelectedLink].y1));
+        }
+
+        if ((mHighMode & UNDERLINE))
+        {
+            graphics->setColor(guiPalette->getColor(Palette::HYPERLINK));
+            graphics->drawLine(mLinks[mSelectedLink].x1,
+                               mLinks[mSelectedLink].y2,
+                               mLinks[mSelectedLink].x2,
+                               mLinks[mSelectedLink].y2);
+        }
+    }
+
+    int x = 0, y = 0;
+    int wrappedLines = 0;
+    int link = 0;
+    gcn::Font *font = getFont();
+
+    graphics->setColor(guiPalette->getColor(Palette::TEXT));
+    for (TextRowPrewrappedIterator i = mTextRowsPrewrapped.begin(); i != mTextRowsPrewrapped.end(); i++)
+    {
+        const gcn::Color textColor = guiPalette->getColor(Palette::TEXT);
+        gcn::Color selColor = textColor;
+        gcn::Color prevColor = selColor;
+        const std::string row = (*i).row;
+        bool wrapped = (*i).wrapped;
         x = 0;
 
         // Check for separator lines
