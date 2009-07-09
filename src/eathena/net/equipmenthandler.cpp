@@ -57,7 +57,6 @@ void EquipmentHandler::handleMessage(MessageIn *msg)
     int itemCount;
     int index, equipPoint, itemId;
     int type;
-    int mask, position;
     Item *item;
     Inventory *inventory = player_node->getInventory();
 
@@ -86,15 +85,15 @@ void EquipmentHandler::handleMessage(MessageIn *msg)
 
                 if (equipPoint)
                 {
-                    mask = 1;
-                    position = 0;
-                    while (!(equipPoint & mask))
+                    for (int position = 0; position <= EQUIPMENT_SIZE; position++)
                     {
-                        mask <<= 1;
-                        position++;
+                        int mask = 1 << position;
+                        if (equipPoint & mask)
+                        {
+                            item = inventory->getItem(index);
+                            player_node->mEquipment->setEquipment(position, index);
+                        }
                     }
-                    item = inventory->getItem(index);
-                    player_node->mEquipment->setEquipment(position, index);
                 }
             }
             break;
@@ -116,28 +115,27 @@ void EquipmentHandler::handleMessage(MessageIn *msg)
 
             /*
              * An item may occupy more than 1 slot.  If so, it's
-             * only shown as equipped on the *first* slot.
+             * shown as equipped on *both* slots.
              */
-            mask = 1;
-            position = 0;
-            while (!(equipPoint & mask))
+            for (int position = 0; position <= EQUIPMENT_SIZE; position++)
             {
-                mask <<= 1;
-                position++;
+                int mask = 1 << position;
+                if (!(equipPoint & mask))
+                    continue;
+
+                if (debugEquipment)
+                    logger->log("Equipping: %i %i %i at position %i",
+                                index, equipPoint, type, position);
+
+                item = inventory->getItem(player_node->mEquipment->getEquipment(position));
+
+                // Unequip any existing equipped item in this position
+                if (item)
+                    item->setEquipped(false);
+
+                item = inventory->getItem(index);
+                player_node->mEquipment->setEquipment(position, index);
             }
-
-            if (debugEquipment)
-                logger->log("Equipping: %i %i %i at position %i",
-                            index, equipPoint, type, position);
-
-            item = inventory->getItem(player_node->mEquipment->getEquipment(position));
-
-            // Unequip any existing equipped item in this position
-            if (item)
-                item->setEquipped(false);
-
-            item = inventory->getItem(index);
-            player_node->mEquipment->setEquipment(position, index);
             inventoryWindow->updateButtons();
             break;
 
@@ -155,31 +153,29 @@ void EquipmentHandler::handleMessage(MessageIn *msg)
             if (!equipPoint)   // No point given, no point in searching
                 break;
 
-            mask = 1;
-            position = 0;
-            while (!(equipPoint & mask))
-            {
-                mask <<= 1;
-                position++;
-            }
-
             item = inventory->getItem(index);
 
             if (!item)
                 break;
 
-            item->setEquipped(false);
+            for (int position = 0; position <= EQUIPMENT_SIZE; position++)
+            {
+                int mask = 1 << position;
+                if (!(equipPoint & mask))
+                    continue;
 
-            if (equipPoint & 0x8000)    // Arrows
-                player_node->mEquipment->setArrows(-1);
-            else
-                player_node->mEquipment->removeEquipment(position);
+                item->setEquipped(false);
 
+                if (equipPoint & 0x8000)    // Arrows
+                    player_node->mEquipment->setArrows(-1);
+                else
+                    player_node->mEquipment->removeEquipment(position);
+
+                if (debugEquipment)
+                    logger->log("Unequipping: %i %i(%i) %i",
+                                index, equipPoint, type, position);
+            }
             inventoryWindow->updateButtons();
-
-            if (debugEquipment)
-                logger->log("Unequipping: %i %i(%i) %i",
-                            index, equipPoint, type, position);
 
             break;
 
