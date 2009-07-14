@@ -143,6 +143,7 @@ void BrowserBox::addRow(const std::string &row)
     {
         while (mTextRows.size() > mMaxRows)
         {
+            mTextRowsPrewrapped.clear();
             mTextRows.pop_front();
             for (unsigned int i = 0; i < mLinks.size(); i++)
             {
@@ -326,6 +327,8 @@ void BrowserBox::draw(gcn::Graphics *graphics)
         bool wrapped = false;
         x = 0;
 
+        //std::cout << "not prewrapped: " << row << std::endl;
+
         // Check for separator lines
         if (row.find("---", 0) == 0)
         {
@@ -465,7 +468,7 @@ void BrowserBox::draw(gcn::Graphics *graphics)
             }
             font->drawString(graphics, part, x, y);
             x += font->getWidth(part);
-            PrewrappedRow temp(previousWrapped, row);
+            PrewrappedRow temp(previousWrapped, part);
             mTextRowsPrewrapped.push_back(temp);
         }
         y += font->getHeight();
@@ -530,6 +533,8 @@ void BrowserBox::drawPrewrapped(gcn::Graphics *graphics)
         const std::string row = (*i).row;
         bool wrapped = (*i).wrapped;
         x = 0;
+
+        //std::cout << "yes prewrapped: " << row << std::endl;
 
         // Check for separator lines
         if (row.find("---", 0) == 0)
