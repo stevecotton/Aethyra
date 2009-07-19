@@ -27,6 +27,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
 
 #include "../../core/image/sprite/spritedef.h"
 
@@ -113,6 +114,15 @@ class ItemInfo
          */
         const int getEquipSlots() const { return mEquipSlots; }
 
+        /**
+         * Tags (for sorting the inventory etc).  Server ones are set
+         * automatically from items.xml etc.
+         */
+        void addServerTag(const std::string tag) { mServerTags.insert(tag); }
+        void addUserTag(const std::string tag) { mUserTags.insert(tag); }
+        const std::set<std::string> getServerTags() const { return mServerTags; }
+        const std::set<std::string> getUserTags() const { return mUserTags; }
+
     protected:
         std::string mImageName;      /**< The filename of the icon image. */
         std::string mName;
@@ -133,6 +143,10 @@ class ItemInfo
 
         /** Stores the names of sounds to be played at certain event. */
         std::map< EquipmentSoundEvent, std::vector<std::string> > mSounds;
+
+        /** Tags (for sorting the inventory etc).  Server ones are set automatically from items.xml etc. */
+        std::set<std::string> mServerTags;
+        std::set<std::string> mUserTags;
 };
 
 #endif

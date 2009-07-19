@@ -24,6 +24,7 @@
 #define ITEM_MANAGER_H
 
 #include <map>
+#include <string>
 
 #include "iteminfo.h"
 
@@ -52,6 +53,10 @@ namespace ItemDB
     typedef std::map<std::string, ItemInfo*> NamedItemInfos;
     typedef ItemInfos::iterator ItemInfoIterator;
     typedef NamedItemInfos::iterator NamedItemInfoIterator;
+
+    // Tags overview (gets the list of all tags used by items)
+    std::size_t getTagCount();
+    const std::string& getTag(int n);
 }
 
 #endif

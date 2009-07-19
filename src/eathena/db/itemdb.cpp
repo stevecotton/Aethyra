@@ -38,6 +38,8 @@ namespace
     ItemDB::ItemInfos mItemInfos;
     ItemDB::NamedItemInfos mNamedItemInfos;
     ItemInfo *mUnknown;
+    std::set<std::string> mTagSet;
+    std::vector<std::string> mTagVector;
     bool mLoaded = false;
 }
 
@@ -120,6 +122,12 @@ void ItemDB::load()
                 }
                 else if (xmlStrEqual(itemChild->name, BAD_CAST "sound"))
                     loadSoundRef(itemInfo, itemChild);
+                else if (xmlStrEqual(itemChild->name, BAD_CAST "tag"))
+                {
+                    std::string tag = (const char*) itemChild->xmlChildrenNode->content;    // FIXME as with the existing code, we assume ASCII == UTF-8
+                    itemInfo->addServerTag(tag);
+                    mTagSet.insert(tag);
+                }
             }
 
             mItemInfos[id] = itemInfo;
@@ -223,4 +231,16 @@ void loadSoundRef(ItemInfo *itemInfo, xmlNodePtr node)
         itemInfo->addSound(EQUIP_EVENT_STRIKE, filename);
     else
         logger->log("ItemDB: Ignoring unknown sound event '%s'", event.c_str());
+}
+
+std::size_t ItemDB::getTagCount()
+{
+    return mTagSet.size();
+}
+
+const std::string& ItemDB::getTag(int n)
+{
+    // Hmm - do we need bounds checking here?
+    // Possibly, for when the user deletes a user-tag; depending on how the user-tags UI will work.
+    return *mTagSet.begin(); //mTags.at(n); // TODO - move set to vector
 }
