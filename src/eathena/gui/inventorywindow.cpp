@@ -54,26 +54,27 @@
 extern Window *equipmentWindow;
 extern Window *itemShortcutWindow;
 
+/**
+ * ListModel wrapping ItemDB's tag functions.
+ * There's an extra "tag" which is the empty string -
+ * corresponding to the empty filter which shows all items.
+ */
 class ItemFilterListModel : public gcn::ListModel
 {
     public:
-        ItemFilterListModel()
-        {
-            filters.push_back("");
-            filters.push_back("generic");
-            filters.push_back("usable");
-            filters.push_back("equip-head");
-            filters.push_back("equip-1hand");
-            filters.push_back("equip-torso");
-            filters.push_back("equip-feet");
-        };
         virtual ~ItemFilterListModel() {};
 
-        int getNumberOfElements() {return filters.size();}
-        std::string getElementAt(int i) {return filters.at(i);}
+        int getNumberOfElements()
+        {
+            return (ItemDB::getTagCount() + 1);
+        }
 
-    private:
-        std::vector<std::string> filters;
+        std::string getElementAt(int i)
+        {
+            if (i == 0)
+                return "";      //TODO check C++ temporaries
+            return ItemDB::getTag(i-1);
+        }
 };
 
 InventoryWindow::InventoryWindow(int invSize):
