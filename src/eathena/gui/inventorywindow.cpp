@@ -54,10 +54,33 @@
 extern Window *equipmentWindow;
 extern Window *itemShortcutWindow;
 
+class ItemFilterListModel : public gcn::ListModel
+{
+    public:
+        ItemFilterListModel()
+        {
+            filters.push_back("");
+            filters.push_back("generic");
+            filters.push_back("usable");
+            filters.push_back("equip-head");
+            filters.push_back("equip-1hand");
+            filters.push_back("equip-torso");
+            filters.push_back("equip-feet");
+        };
+        virtual ~ItemFilterListModel() {};
+
+        int getNumberOfElements() {return filters.size();}
+        std::string getElementAt(int i) {return filters.at(i);}
+
+    private:
+        std::vector<std::string> filters;
+};
+
 InventoryWindow::InventoryWindow(int invSize):
     Window(_("Inventory")),
     mMaxSlots(invSize),
-    mItemDesc(false)
+    mItemDesc(false),
+    mFilterState(0)
 {
     setWindowName("Inventory");
     setResizable(true);
@@ -105,15 +128,22 @@ InventoryWindow::InventoryWindow(int invSize):
     mWeightBar->addColor(255, 255, 0);
     mWeightBar->addColor(255, 0, 0);
 
+    mFilterLabel = new Label(_("Filter: "));
+    mFilterModel = new ItemFilterListModel();
+    mFilterSelection = new DropDown(mFilterModel);
+    mFilterSelection->addSelectionListener(this);
+
     setMinHeight(130);
     setMinWidth(mWeightLabel->getWidth() + mSlotsLabel->getWidth() + 260);
 
-    place(0, 0, mWeightLabel).setPadding(3);
-    place(1, 0, mWeightBar, 5);
+    place(0, 0, mFilterLabel).setPadding(3);
+    place(1, 0, mFilterSelection).setPadding(3);
+    place(2, 0, mWeightLabel).setPadding(3);
+    place(3, 0, mWeightBar, 3);
     place(6, 0, mSlotsLabel).setPadding(3);
     place(7, 0, mSlotsBar, 2);
     place(0, 1, mInvenScroll, 9, 4);
-    place(0, 5, mShortcutButton);
+    place(0, 5, mShortcutButton, 2, 1);
     place(6, 5, mStoreButton);
     place(7, 5, mDropButton);
     place(8, 5, mUseButton);
@@ -240,6 +270,12 @@ void InventoryWindow::valueChanged(const gcn::SelectionEvent &event)
 
         item ? itemShortcut->setSelected(item->getId()) : 
                itemShortcut->setSelected(-1);
+    }
+    else if (event.getSource() == mFilterSelection)
+    {
+        int selectedIndex = mFilterSelection->getSelected();
+        const std::string selected = mFilterModel->getElementAt(selectedIndex);
+        mItems->setTypeFilter(selected);
     }
 }
 

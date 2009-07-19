@@ -29,10 +29,14 @@
 #include "../structs/inventory.h"
 
 #include "../../bindings/guichan/widgets/window.h"
+#include "../../bindings/guichan/widgets/dropdown.h"
 
 class Item;
 class ItemContainer;
 class ProgressBar;
+
+//TODO - move to a shared class?
+class ItemFilterListModel;
 
 /**
  * Inventory dialog.
@@ -98,10 +102,13 @@ class InventoryWindow : public Window, gcn::ActionListener,
         int mMaxWeight;
         gcn::Button *mShortcutButton;
         gcn::Button *mStoreButton, *mUseButton, *mDropButton;
+        DropDown *mFilterSelection;
+        ItemFilterListModel *mFilterModel;  //TODO memory deletion needed
         gcn::ScrollArea *mInvenScroll;
 
         gcn::Label *mWeightLabel;
         gcn::Label *mSlotsLabel;
+        gcn::Label *mFilterLabel;
 
         ProgressBar *mWeightBar;
         ProgressBar *mSlotsBar;
@@ -109,6 +116,8 @@ class InventoryWindow : public Window, gcn::ActionListener,
         int mMaxSlots;
 
         bool mItemDesc;
+
+        int mFilterState;
 };
 
 extern InventoryWindow *inventoryWindow;
