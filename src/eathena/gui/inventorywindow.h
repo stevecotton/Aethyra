@@ -116,8 +116,6 @@ class InventoryWindow : public Window, gcn::ActionListener,
         int mMaxSlots;
 
         bool mItemDesc;
-
-        int mFilterState;
 };
 
 extern InventoryWindow *inventoryWindow;

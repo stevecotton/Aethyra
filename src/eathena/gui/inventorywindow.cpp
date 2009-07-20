@@ -61,27 +61,64 @@ extern Window *itemShortcutWindow;
  */
 class ItemFilterListModel : public gcn::ListModel
 {
+    private:
+        /**
+         * Index of the separator between special values
+         * and actual tags.
+         */
+        static const int SPECIALS_ALL_ITEMS = 0;
+        static const int SPECIALS_EQUIPPABLE = 1;
+        static const int SPECIALS_SEPARATOR = 2;
+        static const int FIRST_TAG_INDEX = 3;
+
     public:
         virtual ~ItemFilterListModel() {};
 
         int getNumberOfElements()
         {
-            return (ItemDB::getTagCount() + 1);
+            return (ItemDB::getTagCount() + FIRST_TAG_INDEX);
         }
 
         std::string getElementAt(int i)
         {
-            if (i == 0)
-                return "";      //TODO check C++ temporaries
-            return ItemDB::getTag(i-1);
+            if (i == SPECIALS_ALL_ITEMS)
+                return _("all items");      //TODO check C++ temporaries
+            else if (i == SPECIALS_EQUIPPABLE)
+                return _("equippable");      //TODO check C++ temporaries
+            else if (i == SPECIALS_SEPARATOR)
+                return "---";
+            else
+                return ItemDB::getTag(i-FIRST_TAG_INDEX);
+        }
+
+        /**
+         * This sets the relevant filter.  Putting the logic in to
+         * this class, to keep it together with any logic about
+         * what is in the list.
+         *
+         * Unrecognised values, and the separators themselves, clear the
+         * filters (the same as choosing "all items").
+         */
+        void setFilter(ItemContainer* container, int i)
+        {
+            if (i >= FIRST_TAG_INDEX)
+            {
+                const std::string selected = getElementAt(i);
+                container->setTypeFilter(selected);
+            }
+            else if (i == SPECIALS_EQUIPPABLE)
+                //TODO - this needs server information that I wanted to
+                //keep to the EquipmentWindow class
+                container->setTypeFilter("equip-head");
+            else
+                container->setTypeFilter("");
         }
 };
 
 InventoryWindow::InventoryWindow(int invSize):
     Window(_("Inventory")),
     mMaxSlots(invSize),
-    mItemDesc(false),
-    mFilterState(0)
+    mItemDesc(false)
 {
     setWindowName("Inventory");
     setResizable(true);
@@ -275,8 +312,7 @@ void InventoryWindow::valueChanged(const gcn::SelectionEvent &event)
     else if (event.getSource() == mFilterSelection)
     {
         int selectedIndex = mFilterSelection->getSelected();
-        const std::string selected = mFilterModel->getElementAt(selectedIndex);
-        mItems->setTypeFilter(selected);
+        mFilterModel->setFilter(mItems, selectedIndex);
     }
 }
 
